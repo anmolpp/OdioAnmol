@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CivicTrack - User & Admin Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    crossorigin=""
+  />
+  <style>
+    /* Reset and Base Styles */
+    * {
+      box-sizing: border-box;
+    }
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f7f8;
+      color: #333;
+      height: 100vh;
+      overflow: hidden;
+    }
+    button {
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    /* Screen Containers */
+    #landingScreen,
+    #userScreen,
+    #adminScreen {
+      height: 100vh;
+      overflow-y: auto;
+      display: none;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px;
+    }
+    #landingScreen {
+      display: flex;
+    }
+
+    /* Card */
+    .card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 0 24px rgba(0, 123, 255, 0.25);
+      max-width: 600px;
+      width: 100%;
+      padding: 2.5rem 2rem 3rem 2rem;
+      text-align: center;
+      user-select: none;
+    }
+
+    /* Headings */
+    h1,
+    h2 {
+      color: #007bff;
+      margin-bottom: 1rem;
+      font-weight: 900;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-group button {
+      flex-grow: 1;
+      min-width: 130px;
+      padding: 1.05rem 0;
+      font-weight: 700;
+      font-size: 1.3rem;
+      border: none;
+      border-radius: 0.7rem;
+      background: #007bff;
+      color: white;
+      transition: background 0.3s;
+      user-select: none;
+    }
+    .btn-group button:hover,
+    .btn-group button:focus {
+      background: #0056b3;
+      outline: none;
+    }
+
+    /* Forms */
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    label {
+      font-weight: 600;
+      font-size: 1rem;
+      text-align: left;
+      user-select: text;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    textarea,
+    select {
+      padding: 0.95rem 1rem;
+      font-size: 1rem;
+      border-radius: 0.75rem;
+      border: 2px solid #adb9d0;
+      font-family: inherit;
+      background: #fafaff;
+      transition: border-color 0.3s ease;
+      width: 100%;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    textarea:focus,
+    select:focus {
+      border-color: #007bff;
+      outline: none;
+      background: white;
+      box-shadow: 0 0 14px rgba(0, 123, 255, 0.3);
+    }
+    textarea {
+      min-height: 120px;
+      max-height: 220px;
+    }
+
+    /* Submit buttons */
+    button[type="submit"],
+    #adminLogoutBtn,
+    .link-btn {
+      margin-top: 1rem;
+      width: 100%;
+      font-weight: 700;
+      font-size: 1.2rem;
+      border-radius: 0.75rem;
+      border: none;
+      background: #007bff;
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 0 26px rgba(0, 123, 255, 0.33);
+      user-select: none;
+      transition: background 0.3s;
+    }
+    button[type="submit"]:hover,
+    #adminLogoutBtn:hover,
+    .link-btn:hover {
+      background: #0056b3;
+      cursor: pointer;
+    }
+
+    /* Link buttons */
+    .link-btn {
+      background: none;
+      color: #007bff;
+      text-decoration: underline;
+      width: auto;
+      padding: 0;
+      margin: 10px 0 0;
+      font-weight: 600;
+      font-size: 1rem;
+      user-select: none;
+    }
+    .link-btn:focus {
+      outline: 2px solid #0056b3;
+      outline-offset: 2px;
+    }
+
+    /* Messages */
+    .error-msg,
+    .success-msg {
+      display: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin: 0.4rem 0 0.9rem 0;
+      text-align: left;
+    }
+    .error-msg {
+      color: #dc3545;
+    }
+    .success-msg {
+      color: #28a745;
+    }
+
+    /* Photo Preview */
+    .photo-preview {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+    .photo-preview img {
+      height: 60px;
+      width: 60px;
+      border-radius: 0.8rem;
+      object-fit: cover;
+      border: 1px solid #bbb;
+      user-select: none;
+    }
+
+    /* Map container */
+    .map-container {
+      border-radius: 1rem;
+      height: 280px;
+      margin-top: 1rem;
+      box-shadow: 0 0 16px rgba(0, 123, 255, 0.25);
+      user-select: none;
+      overflow: hidden;
+    }
+
+    /* Tables */
+    .reports-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 1rem;
+      box-shadow: 0 0 28px rgba(0, 123, 255, 0.3);
+      overflow: hidden;
+    }
+    .reports-table th,
+    .reports-table td {
+      padding: 12px 16px;
+      border-bottom: 2px solid #e1ecfd;
+      font-size: 0.95rem;
+      text-align: left;
+      vertical-align: middle;
+      user-select: none;
+    }
+    .reports-table th {
+      background: #cfdffb;
+      color: #0056b3;
+      font-weight: 700;
+    }
+    .reports-table tr:last-child td {
+      border: none;
+    }
+
+    /* Status badges */
+    .status-badge {
+      border-radius: 1.5rem;
+      padding: 0.3rem 1rem;
+      font-weight: 700;
+      color: white;
+      font-size: 0.85rem;
+      user-select: none;
+      text-transform: capitalize;
+    }
+    .status-badge.reported {
+      background: #f0ad48;
+    }
+    .status-badge["in progress"],
+    .status-badge.inprogress {
+      background: #17a2b8;
+    }
+    .status-badge.resolved {
+      background: #28a745;
+    }
+    .status-badge.flagged {
+      background: #dc3545;
+    }
+    .status-badge.banned {
+      background: #6c757d;
+    }
+
+    /* Select in table */
+    select.status-select {
+      width: 100%;
+      padding: 4px 8px;
+      font-size: 0.9rem;
+      border-radius: 0.5rem;
+      border: 1px solid #619efd;
+      user-select: auto;
+    }
+
+    /* Admin panel */
+    #adminScreen {
+      display: none;
+      max-width: 1000px;
+      margin: 2rem auto;
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 0 28px rgba(0, 123, 255, 0.35);
+      user-select: none;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 230px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      background: #007bff;
+      box-shadow: 2px 0 15px rgba(0, 0, 0, 0.15);
+      padding-top: 3rem;
+      color: white;
+      user-select: none;
+    }
+    .sidebar .sidebar-title {
+      font-size: 2rem;
+      font-weight: 900;
+      margin-bottom: 3.5rem;
+      text-align: center;
+      user-select: text;
+    }
+    .sidebar nav a {
+      display: block;
+      padding: 20px 35px;
+      font-weight: 600;
+      font-size: 1.2rem;
+      color: white;
+      border-left: 6px solid transparent;
+      transition: background 0.3s, border-left 0.3s;
+      text-decoration: none;
+      user-select: none;
+      cursor: pointer;
+    }
+    .sidebar nav a:hover,
+    .sidebar nav a.active {
+      background: #074aa5;
+      border-left-color: #ffd700;
+      outline: none;
+    }
+
+    /* Main Panel */
+    .main {
+      margin-left: 230px;
+      padding: 3rem;
+      min-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* Topbar */
+    .topbar {
+      height: 64px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #0056b3;
+      background: white;
+      border-bottom: 2px solid #e1ecfd;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 24px;
+      user-select: none;
+      padding: 0 1rem;
+      border-radius: 1rem 1rem 0 0;
+    }
+    .topbar span {
+      user-select: text;
+    }
+    .topbar button {
+      background: #dc3545;
+      border: none;
+      color: white;
+      border-radius: 1rem;
+      padding: 12px 28px;
+      cursor: pointer;
+      transition: background 0.3s;
+      font-weight: 700;
+      font-size: 1rem;
+      user-select: none;
+    }
+    .topbar button:hover {
+      background: #b12424;
+    }
+
+    /* Dashboard Widgets */
+    .dashboard-widgets {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      user-select: none;
+    }
+    .dashboard-widget {
+      background: #e4edff;
+      border-radius: 1rem;
+      padding: 2.2rem 2rem;
+      text-align: center;
+      font-weight: 700;
+      color: #0056b3;
+      box-shadow: 0 0 14px rgba(0, 123, 255, 0.2);
+      user-select: none;
+      min-width: 160px;
+      flex-grow: 1;
+    }
+    .dashboard-widget .value {
+      font-size: 3.2rem;
+      margin-bottom: 0.7rem;
+      user-select: text;
+    }
+    .dashboard-widget div {
+      user-select: text;
+    }
+
+    /* Tabs */
+    .tab-buttons {
+      margin-bottom: 1.75rem;
+      user-select: none;
+    }
+    .tab-buttons button {
+      font-weight: 700;
+      padding: 0.95rem 2rem;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 2rem;
+      margin-right: 1rem;
+      user-select: none;
+      cursor: pointer;
+      background: #d8e2ff;
+      color: #0056b3;
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+    .tab-buttons button:hover {
+      background: #124bc2;
+      color: white;
+    }
+    .tab-buttons button.active {
+      background: #0056b3 !important;
+      color: white !important;
+    }
+    /* Tab content */
+    .tab-content {
+      display: none;
+      user-select: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .sidebar {
+        width: 70px !important;
+      }
+      .sidebar .sidebar-title {
+        display: none;
+      }
+      .sidebar nav a {
+        font-size: 1rem !important;
+        padding: 18px 19px !important;
+      }
+      .sidebar nav a > span {
+        display: none;
+      }
+      .main {
+        margin-left: 70px !important;
+        padding: 2rem !important;
+      }
+      .tab-buttons {
+        overflow-x: auto;
+        padding-bottom: 1.2rem;
+      }
+      .tab-buttons button {
+        flex-shrink: 0;
+      }
+      .reports-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      .reports-table th,
+      .reports-table td {
+        min-width: 110px;
+      }
+    }
+    @media (max-width: 650px) {
+      button[type="submit"] {
+        font-size: 1.1rem !important;
+      }
+      input,
+      textarea,
+      select {
+        font-size: 1rem !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Landing -->
+  <main id="landingScreen" role="main" aria-label="Choose role">
+    <section class="card">
+      <h2 id="roleHeading">Welcome to CivicTrack</h2>
+      <p>Choose your role to proceed:</p>
+      <div class="btn-group">
+        <button id="userBtn" aria-label="Proceed as user">User</button>
+        <button id="adminBtn" aria-label="Proceed as admin">Admin</button>
+      </div>
+      <p style="margin-top: 1rem; font-size: 0.9rem; color: #444;">
+        Users can report issues without logging in.<br />
+        Admins manage and moderate reports.
+      </p>
+    </section>
+  </main>
+
+  <!-- User -->
+  <section id="userScreen" role="main" aria-label="User area" style="display: none;">
+    <div class="card" style="max-width: 620px; margin: auto;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+        <button class="link-btn" id="userBackBtn" aria-label="Back to role select">← Back</button>
+        <nav aria-label="User tabs">
+          <button class="link-btn active user-tab-btn" data-tab="report" style="font-weight: 700;" aria-current="page">Report Issue</button>
+          <button class="link-btn user-tab-btn" data-tab="myreports" style="font-weight: 700;">My Reports</button>
+        </nav>
+      </div>
+
+      <!-- Report Issue form -->
+      <form id="reportForm" novalidate>
+        <h1>Report an Issue</h1>
+        <label for="title">Issue Title</label>
+        <input id="title" name="title" placeholder="Brief title" maxlength="80" required />
+        <label for="category">Category</label>
+        <select id="category" name="category" required>
+          <option value="" disabled selected>Select category</option>
+          <option>Roads</option>
+          <option>Lighting</option>
+          <option>Water</option>
+          <option>Cleanliness</option>
+          <option>Safety</option>
+          <option>Other</option>
+        </select>
+        <label for="description">Description</label>
+        <textarea id="description" name="description" placeholder="Describe the issue" required></textarea>
+        <label for="photos">Upload Photos (optional)</label>
+        <input id="photos" name="photos" type="file" multiple accept="image/*" />
+        <div id="photoPreview" class="photo-preview"></div>
+        <label>Location (Drag marker)</label>
+        <div id="map" class="map-container"></div>
+        <input type="hidden" id="lat" name="lat" />
+        <input type="hidden" id="lng" name="lng" />
+        <button type="submit">Submit</button>
+        <div id="reportMessage" style="margin-top: 1rem; color: green;"></div>
+      </form>
+
+      <!-- My Reports -->
+      <section id="myReportsSection" style="display: none; margin-top: 2rem;">
+        <h1>My Reports</h1>
+        <table class="reports-table" aria-label="My reports">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody id="myReportsTbody">
+            <tr>
+              <td colspan="5" style="text-align: center; font-style: italic; padding: 1rem;">
+                No reports found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </section>
+
+  <!-- Admin -->
+  <section id="adminScreen" aria-label="Admin panel" style="display: none;">
+    <div style="display: flex;">
+      <nav class="sidebar" aria-label="Main navigation">
+        <h1 class="sidebar-title" tabindex="0" aria-label="CivicTrack Admin">
+          CivicTrack Admin
+        </h1>
+        <nav>
+          <a href="#" class="nav-link active" id="navDashboard">Dashboard</a>
+          <a href="#" class="nav-link" id="navReports">Reported Issues</a>
+          <a href="#" class="nav-link" id="navAnalytics">Analytics</a>
+        </nav>
+      </nav>
+      <main class="main" role="main">
+        <div class="topbar" aria-label="Admin topbar">
+          <span id="adminName" aria-live="polite"></span>
+          <span id="adminEmail" aria-live="polite" style="margin-left: 10px"></span>
+          <button id="adminLogoutBtn" aria-label="Logout admin">Logout</button>
+        </div>
+
+        <!-- Authentication Area -->
+        <div id="authArea" aria-label="Admin authentication area">
+          <form id="loginForm" aria-label="Login form" role="form" novalidate>
+            <h1>Login</h1>
+            <label for="loginEmail">Email</label>
+            <input id="loginEmail" type="email" required />
+            <div id="loginEmailError" class="error-msg">
+              Please enter a valid email.
+            </div>
+            <label for="loginPass">Password</label>
+            <input id="loginPass" type="password" required />
+            <div id="loginPassError" class="error-msg">Please enter your password.</div>
+            <button type="submit">Login</button>
+            <div id="loginError" class="error-msg" aria-live="assertive">
+              Invalid email or password.
+            </div>
+            <button
+              type="button"
+              id="showRegisterBtn"
+              class="link-btn"
+              aria-label="Go to registration"
+            >
+              No account? Register here
+            </button>
+          </form>
+
+          <form
+            id="registerForm"
+            aria-label="Registration form"
+            novalidate
+            style="display: none"
+          >
+            <h1>Register</h1>
+            <label for="regName">Full Name</label>
+            <input id="regName" type="text" required />
+            <label for="regEmail">Email</label>
+            <input id="regEmail" type="email" required />
+            <label for="regPass">Password</label>
+            <input id="regPass" type="password" minlength="6" required />
+            <button type="submit">Register</button>
+            <div id="registerError" class="error-msg" aria-live="assertive"></div>
+            <div id="registerSuccess" class="success-msg" aria-live="polite">
+              Registration successful! You may now login.
+            </div>
+            <button
+              type="button"
+              id="showLoginBtn"
+              class="link-btn"
+              aria-label="Go to login"
+            >
+              Already have an account? Login here
+            </button>
+          </form>
+        </div>
+
+        <!-- Admin dashboard -->
+        <section
+          id="adminDashboard"
+          aria-label="Admin dashboard"
+          role="region"
+          style="display: none"
+        >
+          <div
+            class="tab-buttons"
+            role="tablist"
+            aria-label="Dashboard navigation"
+          >
+            <button
+              role="tab"
+              aria-selected="true"
+              aria-controls="tab-dashboard"
+              tabindex="0"
+              class="tab-btn active"
+              data-tab="dashboard"
+            >
+              Dashboard
+            </button>
+            <button
+              role="tab"
+              aria-selected="false"
+              aria-controls="tab-reports"
+              tabindex="-1"
+              class="tab-btn"
+              data-tab="reports"
+            >
+              Reported Issues
+            </button>
+            <button
+              role="tab"
+              aria-selected="false"
+              aria-controls="tab-analytics"
+              tabindex="-1"
+              class="tab-btn"
+              data-tab="analytics"
+            >
+              Analytics
+            </button>
+          </div>
+          <div
+            id="tab-dashboard"
+            class="tab-content active"
+            role="tabpanel"
+            tabindex="0"
+          >
+            <div
+              class="dashboard-widgets"
+              role="list"
+              aria-label="Summary statistics"
+            >
+              <div
+                class="dashboard-widget"
+                role="listitem"
+                aria-label="Total Issues Reported"
+              >
+                <div class="value" id="totalReports">0</div>
+                <div>Total Issues</div>
+              </div>
+              <div
+                class="dashboard-widget"
+                role="listitem"
+                aria-label="Issues Reported Today"
+              >
+                <div class="value" id="issuesToday">0</div>
+                <div>Reported Today</div>
+              </div>
+              <div
+                class="dashboard-widget"
+                role="listitem"
+                aria-label="Issues Marked Resolved"
+              >
+                <div class="value" id="issuesResolved">0</div>
+                <div>Resolved</div>
+              </div>
+              <div
+                class="dashboard-widget"
+                role="listitem"
+                aria-label="Issues Flagged"
+              >
+                <div class="value" id="issuesFlagged">0</div>
+                <div>Flagged</div>
+              </div>
+              <div
+                class="dashboard-widget"
+                role="listitem"
+                aria-label="Reports Banned"
+              >
+                <div class="value" id="activeBans">0</div>
+                <div>Banned</div>
+              </div>
+            </div>
+          </div>
+          <div
+            id="tab-reports"
+            class="tab-content"
+            role="tabpanel"
+            tabindex="0"
+            hidden
+          >
+            <table class="reports-table" aria-label="Reported issue list">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="issuesTbody">
+                <tr>
+                  <td colspan="6" style="text-align: center; font-style: italic; padding: 1rem">
+                    No issues to display.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div
+            id="tab-analytics"
+            class="tab-content"
+            role="tabpanel"
+            tabindex="0"
+            hidden
+          >
+            <h2>Analytics</h2>
+            <div
+              style="display: flex; gap: 20px; flex-wrap: wrap"
+              aria-label="Issue categories summary"
+              role="list"
+            >
+              <div
+                class="dashboard-widget"
+                role="listitem"
+                aria-label="Roads Reports"
+              >
+                <div class="value" id="analyticRoads">0</div>
+                <div>Roads</div>
+              </div>
+              <div
+                class="dashboard-widget"
+                role="listitem"
+                aria-label="Cleanliness Reports"
+              >
+                <div class="value" id="analyticCleanliness">0</div>
+                <div>Cleanliness</div>
+              </div>
+              <div
+                class="dashboard-widget"
+                role="listitem"
+                aria-label="Lighting Reports"
+              >
+                <div class="value" id="analyticLighting">0</div>
+                <div>Lighting</div>
+              </div>
+            </div>
+            <p>
+              <em>
+                Additional charts and analytics can be integrated here using
+                libraries like Chart.js.
+              </em>
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </section>
+
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" crossorigin=""></script>
+  <script>
+    (function () {
+      // Element references
+      const landingScreen = document.getElementById("landingScreen"),
+        userScreen = document.getElementById("userScreen"),
+        adminScreen = document.getElementById("adminScreen"),
+        adminDashboard = document.getElementById("adminDashboard"),
+        authArea = document.getElementById("authArea"),
+        loginForm = document.getElementById("loginForm"),
+        registerForm = document.getElementById("registerForm"),
+        loginEmail = document.getElementById("loginEmail"),
+        loginPass = document.getElementById("loginPass"),
+        loginError = document.getElementById("loginError"),
+        loginEmailError = document.getElementById("loginEmailError"),
+        loginPassError = document.getElementById("loginPassError"),
+        registerError = document.getElementById("registerError"),
+        registerSuccess = document.getElementById("registerSuccess"),
+        regName = document.getElementById("regName"),
+        regEmail = document.getElementById("regEmail"),
+        regPass = document.getElementById("regPass"),
+        adminName = document.getElementById("adminName"),
+        adminEmail = document.getElementById("adminEmail"),
+        adminLogoutBtn = document.getElementById("adminLogoutBtn"),
+        tabButtons = document.querySelectorAll(".tab-buttons button"),
+        tabContents = document.querySelectorAll(".tab-content"),
+        issuesTbody = document.getElementById("issuesTbody"),
+        totalReports = document.getElementById("totalReports"),
+        issuesToday = document.getElementById("issuesToday"),
+        issuesResolved = document.getElementById("issuesResolved"),
+        issuesFlagged = document.getElementById("issuesFlagged"),
+        activeBans = document.getElementById("activeBans"),
+        analyticRoads = document.getElementById("analyticRoads"),
+        analyticCleanliness = document.getElementById("analyticCleanliness"),
+        analyticLighting = document.getElementById("analyticLighting"),
+        reportForm = document.getElementById("reportForm"),
+        photoInput = document.getElementById("photos"),
+        photoPreview = document.getElementById("photoPreview"),
+        latInput = document.getElementById("lat"),
+        lngInput = document.getElementById("lng"),
+        reportMessage = document.getElementById("reportMessage"),
+        showReportBtn = document.querySelector(
+          "#userScreen button[data-tab='report']"
+        ),
+        showMyReportsBtn = document.querySelector(
+          "#userScreen button[data-tab='myreports']"
+        ),
+        myReportsSection = document.getElementById("myReportsSection"),
+        myReportsTbody = document.getElementById("myReportsTbody");
+
+      // Map variables
+      let map, marker;
+      const defaultPos = [28.6139, 77.209];
+
+      // Initialize Leaflet Map
+      function initMap() {
+        if (map) return;
+        map = L.map("map").setView(defaultPos, 13);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution: "© OpenStreetMap contributors",
+        }).addTo(map);
+        marker = L.marker(defaultPos, { draggable: true }).addTo(map);
+        marker.on("moveend", () => {
+          const pos = marker.getLatLng();
+          latInput.value = pos.lat.toFixed(6);
+          lngInput.value = pos.lng.toFixed(6);
+        });
+        map.on("click", function (e) {
+          marker.setLatLng(e.latlng);
+          latInput.value = e.latlng.lat.toFixed(6);
+          lngInput.value = e.latlng.lng.toFixed(6);
+        });
+        latInput.value = defaultPos[0];
+        lngInput.value = defaultPos[1];
+      }
+
+      function detectLocation() {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(function (pos) {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          map.setView([lat, lng], 15);
+          marker.setLatLng([lat, lng]);
+          latInput.value = lat.toFixed(6);
+          lngInput.value = lng.toFixed(6);
+        });
+      }
+
+      // Reset Report Form
+      function resetReportForm() {
+        reportForm.reset();
+        photoPreview.innerHTML = "";
+        if (marker) marker.setLatLng(defaultPos);
+        if (map) map.setView(defaultPos, 13);
+        latInput.value = defaultPos[0];
+        lngInput.value = defaultPos[1];
+        reportMessage.textContent = "";
+      }
+
+      // Escape HTML utility
+      function escapeHTML(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // User Tabs
+      document.querySelectorAll("#userScreen button.user-tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const tab = btn.dataset.tab;
+          document
+            .querySelectorAll("#userScreen .user-tab-btn")
+            .forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          if (tab === "report") {
+            reportForm.style.display = "flex";
+            myReportsSection.style.display = "none";
+          } else {
+            reportForm.style.display = "none";
+            myReportsSection.style.display = "block";
+            renderUserReports();
+          }
+        });
+      });
+
+      // Show landing screen
+      function showLanding() {
+        landingScreen.style.display = "flex";
+        userScreen.style.display = "none";
+        adminScreen.style.display = "none";
+      }
+
+      // Show user screen
+      function showUser() {
+        landingScreen.style.display = "none";
+        userScreen.style.display = "block";
+        adminScreen.style.display = "none";
+        initMap();
+        detectLocation();
+        // default to report form
+        document.querySelector(
+          "#userScreen button.user-tab-btn[data-tab='report']"
+        ).click();
+        resetReportForm();
+      }
+
+      // Show admin screen
+      function showAdmin() {
+        landingScreen.style.display = "none";
+        userScreen.style.display = "none";
+        adminScreen.style.display = "block";
+        authArea.style.display = "flex";
+        adminDashboard.style.display = "none";
+      }
+
+      // Event listeners for landing buttons
+      document.getElementById("userBtn").addEventListener("click", showUser);
+      document.getElementById("adminBtn").addEventListener("click", showAdmin);
+
+      document.getElementById("userBackBtn").addEventListener("click", showLanding);
+      document.getElementById("adminLogoutBtn").addEventListener("click", () => {
+        setCurrentUser(null);
+        resetAuthForms();
+        showLanding();
+      });
+
+      // Photo preview for user
+      photoInput.addEventListener("change", (ev) => {
+        photoPreview.innerHTML = "";
+        [...ev.target.files].slice(0, 35).forEach((file) => {
+          if (!file.type.startsWith("image/")) return;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = document.createElement("img");
+            img.src = e.target.result;
+            photoPreview.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+      // Submission of user report
+      reportForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const title = reportForm.title.value.trim();
+        const category = reportForm.category.value;
+        const description = reportForm.description.value.trim();
+
+        if (!title || !category || !description) {
+          alert("Please complete all required fields.");
+          return;
+        }
+
+        const photos = [];
+        const files = document.getElementById("photos").files;
+        const readers = [];
+        for (let i = 0; i < Math.min(files.length, 35); i++) {
+          if (!files[i].type.startsWith("image/")) continue;
+          const fr = new FileReader();
+          readers.push(
+            new Promise((res) => {
+              fr.onload = (e) => {
+                photos.push(e.target.result);
+                res();
+              };
+              fr.readAsDataURL(files[i]);
+            })
+          );
+        }
+        Promise.all(readers).then(() => {
+          const reports = JSON.parse(localStorage.getItem("civicReports") || "[]");
+          const id = reports.length ? reports[0].id + 1 : 1000;
+          const now = new Date();
+          reports.unshift({
+            id,
+            title,
+            category,
+            description,
+            photos,
+            lat: latInput.value,
+            lng: lngInput.value,
+            date: now.toLocaleString(),
+            status: "Reported",
+          });
+          localStorage.setItem("civicReports", JSON.stringify(reports));
+          renderUserReports();
+          resetReportForm();
+          reportMessage.textContent = "Report submitted. Thank you!";
+          setTimeout(() => (reportMessage.textContent = ""), 4000);
+        });
+      });
+
+      // Render user reports table
+      function renderUserReports() {
+        const reports = JSON.parse(localStorage.getItem("civicReports") || "[]");
+        const tbody = document.getElementById("myReportsTbody");
+        if (!reports.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="5" style="text-align:center">No reports submitted yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = reports
+          .map(
+            (r) => `
+            <tr>
+              <td>${r.id}</td>
+              <td>${escapeHTML(r.title)}</td>
+              <td>${escapeHTML(r.category)}</td>
+              <td><span class="status-badge ${r.status.toLowerCase().replace(/\s/g, "")}">${r.status}</span></td>
+              <td>${r.date}</td>
+            </tr>`
+          )
+          .join("");
+      }
+
+      // Authentication functions:
+      function getUsers() {
+        return JSON.parse(localStorage.getItem("civicUsers") || "[]");
+      }
+      function saveUser(user) {
+        const users = getUsers();
+        users.push(user);
+        localStorage.setItem("civicUsers", JSON.stringify(users));
+      }
+      function setCurrentUser(user) {
+        if (user) localStorage.setItem("civicCurrentUser", JSON.stringify(user));
+        else localStorage.removeItem("civicCurrentUser");
+      }
+      function getCurrentUser() {
+        return JSON.parse(localStorage.getItem("civicCurrentUser"));
+      }
+      function resetAuthForms() {
+        loginForm.reset();
+        registerForm.reset();
+        hideMessages();
+        loginForm.style.display = "flex";
+        registerForm.style.display = "none";
+      }
+      function hideMessages() {
+        loginError.style.display = "none";
+        loginEmailError.style.display = "none";
+        loginPassError.style.display = "none";
+        registerError.style.display = "none";
+        registerSuccess.style.display = "none";
+      }
+
+      // Toggle between login and register forms:
+      document.getElementById("showRegisterBtn").onclick = () => {
+        loginForm.style.display = "none";
+        registerForm.style.display = "flex";
+        hideMessages();
+      };
+      document.getElementById("showLoginBtn").onclick = () => {
+        registerForm.style.display = "none";
+        loginForm.style.display = "flex";
+        hideMessages();
+      };
+
+      // Login form submission:
+      loginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        hideMessages();
+
+        if (!loginEmail.value.trim()) {
+          loginEmailError.style.display = "block";
+          return;
+        }
+        if (!loginPass.value.trim()) {
+          loginPassError.style.display = "block";
+          return;
+        }
+        const email = loginEmail.value.trim().toLowerCase();
+        const pwd = loginPass.value;
+        const users = getUsers();
+        const defaultUser = {
+          username: "admin",
+          email: "admin@example.com",
+          password: "password123",
+          name: "Admin",
+        };
+        let user =
+          email === defaultUser.email && pwd === defaultUser.password
+            ? defaultUser
+            : users.find(
+                (u) => u.email.toLowerCase() === email && u.password === pwd
+              );
+        if (user) {
+          setCurrentUser(user);
+          showAdminDashboard(user);
+          adminScreen.style.display = "block";
+          landingScreen.style.display = "none";
+        } else {
+          loginError.style.display = "block";
+        }
+      });
+
+      // Register form submission:
+      registerForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        hideMessages();
+        const name = regName.value.trim();
+        const email = regEmail.value.trim().toLowerCase();
+        const pwd = regPass.value;
+        if (!name || !email || !pwd) {
+          registerError.textContent = "Please fill all fields.";
+          registerError.style.display = "block";
+          return;
+        }
+        if (!email.match(/^\S+@\S+\.\S+$/)) {
+          registerError.textContent = "Please enter a valid email.";
+          registerError.style.display = "block";
+          return;
+        }
+        if (pwd.length < 6) {
+          registerError.textContent = "Password must be at least 6 chars.";
+          registerError.style.display = "block";
+          return;
+        }
+        const users = getUsers();
+        if (users.some((u) => u.email.toLowerCase() === email)) {
+          registerError.textContent = "Email already registered.";
+          registerError.style.display = "block";
+          return;
+        }
+        saveUser({ username: name, email, password: pwd, name: name });
+        registerSuccess.style.display = "block";
+        registerForm.reset();
+        setTimeout(() => {
+          registerSuccess.style.display = "none";
+          registerForm.style.display = "none";
+          loginForm.style.display = "flex";
+        }, 2000);
+      });
+
+      // Admin Logout:
+      adminLogoutBtn.addEventListener("click", () => {
+        setCurrentUser(null);
+        adminScreen.style.display = "none";
+        adminDashboard.style.display = "none";
+        authArea.style.display = "flex";
+        landingScreen.style.display = "flex";
+        resetAuthForms();
+      });
+
+      // Show Admin Dashboard and populate data
+      function showAdminDashboard(user) {
+        adminName.textContent = user.name || user.username || "Admin";
+        adminEmail.textContent = user.email ? `(${user.email})` : "";
+        authArea.style.display = "none";
+        adminDashboard.style.display = "block";
+        renderAdminReports();
+        updateDashboardStats();
+        showTab("dashboard");
+      }
+
+      // Fill dashboard stats
+      function updateDashboardStats() {
+        const reports = JSON.parse(localStorage.getItem("civicReports") || "[]");
+        totalReports.textContent = reports.length;
+        const todayStr = new Date().toLocaleDateString();
+        issuesToday.textContent = reports.filter(
+          (r) => new Date(r.date).toLocaleDateString() === todayStr
+        ).length;
+        issuesResolved.textContent = reports.filter(
+          (r) => r.status === "Resolved"
+        ).length;
+        issuesFlagged.textContent = reports.filter(
+          (r) => r.status === "Flagged"
+        ).length;
+        activeBans.textContent = reports.filter(
+          (r) => r.status === "Banned"
+        ).length;
+        const categories = { Roads: 0, Cleanliness: 0, Lighting: 0 };
+        reports.forEach((r) => {
+          if (categories.hasOwnProperty(r.category)) categories[r.category]++;
+        });
+        analyticRoads.textContent = categories.Roads;
+        analyticCleanliness.textContent = categories.Cleanliness;
+        analyticLighting.textContent = categories.Lighting;
+      }
+
+      // Populate admin reports table
+      function renderAdminReports() {
+        const reports = JSON.parse(localStorage.getItem("civicReports") || "[]");
+        issuesTbody.innerHTML = "";
+        if (!reports.length) {
+          issuesTbody.innerHTML =
+            '<tr><td colspan="6" style="text-align:center;">No reports to display.</td></tr>';
+          return;
+        }
+        reports.forEach((r) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${r.id}</td>
+            <td>${escapeHTML(r.title)}</td>
+            <td>${escapeHTML(r.category)}</td>
+            <td>
+              <select data-id="${r.id}" class="status-select" aria-label="Change status for report ${r.id}">
+                <option value="Reported" ${
+                  r.status === "Reported" ? "selected" : ""
+                }>Reported</option>
+                <option value="In Progress" ${
+                  r.status === "In Progress" ? "selected" : ""
+                }>In Progress</option>
+                <option value="Resolved" ${
+                  r.status === "Resolved" ? "selected" : ""
+                }>Resolved</option>
+                <option value="Flagged" ${
+                  r.status === "Flagged" ? "selected" : ""
+                }>Flagged</option>
+                <option value="Banned" ${
+                  r.status === "Banned" ? "selected" : ""
+                }>Banned</option>
+              </select>
+            </td>
+            <td>${r.date}</td>
+            <td><button data-id="${r.id}" class="btn-ban">Ban</button></td>
+          `;
+          issuesTbody.appendChild(tr);
+          tr.querySelector(".status-select").addEventListener("change", (e) => {
+            updateReportStatus(e.target.dataset.id, e.target.value);
+          });
+          tr.querySelector(".btn-ban").addEventListener("click", () => {
+            if (
+              confirm(
+                `Are you sure you want to ban report #${r.id}? This action cannot be undone.`
+              )
+            ) {
+              updateReportStatus(r.id, "Banned");
+            }
+          });
+        });
+      }
+
+      // Update a report status and refresh views/stats
+      function updateReportStatus(id, status) {
+        const reports = JSON.parse(localStorage.getItem("civicReports") || "[]");
+        const idx = reports.findIndex((r) => r.id == id);
+        if (idx === -1) return;
+        reports[idx].status = status;
+        localStorage.setItem("civicReports", JSON.stringify(reports));
+        renderAdminReports();
+        renderUserReports();
+        updateDashboardStats();
+      }
+
+      // Tab navigation handlers (admin)
+      tabButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          showTab(btn.dataset.tab);
+        });
+      });
+
+      function showTab(tab) {
+        tabButtons.forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.tab === tab);
+          btn.setAttribute(
+            "aria-selected",
+            btn.dataset.tab === tab ? "true" : "false"
+          );
+          btn.tabIndex = btn.dataset.tab === tab ? 0 : -1;
+        });
+        tabContents.forEach((content) => {
+          content.classList.toggle("active", content.id === "tab-" + tab);
+          content.hidden = content.id !== "tab-" + tab;
+        });
+      }
+
+      // Automatically show landing page on load
+      showLanding();
+    })();
+  </script>
+</body>
+</html>
